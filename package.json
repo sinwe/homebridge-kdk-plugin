@@ -1,6 +1,6 @@
 {
   "name": "homebridge-kdk-plugin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Homebridge plugin for KDK/Panasonic ceiling fans (ECHONET Lite over WiFi)",
   "main": "src/index.js",
   "engines": {
