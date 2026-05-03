@@ -7,11 +7,23 @@ on:
         description: 'Version bump — patch, minor, major, or exact (e.g. 1.2.0)'
         required: true
         default: 'patch'
+      npm_token:
+        description: 'npm access token'
+        required: true
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+      - name: Authorize
+        if: github.actor != 'sinwe'
+        run: |
+          echo "Only sinwe can trigger this workflow"
+          exit 1
+
+      - name: Mask npm token
+        run: echo "::add-mask::${{ github.event.inputs.npm_token }}"
+
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -35,7 +47,7 @@ jobs:
       - name: Publish
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ github.event.inputs.npm_token }}
 
       - name: Push version commit and tag
         run: git push origin master --follow-tags
