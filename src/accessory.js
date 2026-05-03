@@ -58,16 +58,29 @@ class KDKFanAccessory {
         return this._set('fanOn', on, epcs);
       });
 
-    // minValue: 10 (not 0) so HomeKit shows a separate on/off toggle for the fan tile
     this.fanSvc.getCharacteristic(Characteristic.RotationSpeed)
-      .setProps({ minValue: 10, maxValue: 100, minStep: 10 })
-      .onGet(() => this.state.fanSpeed * 10)
-      .onSet(val => {
+      .setProps({ minValue: 0, maxValue: 100, minStep: 10 })
+      .onGet(() => this.state.fanOn ? this.state.fanSpeed * 10 : 0)
+      .onSet(async val => {
+        if (val === 0) {
+          return this._set('fanOn', false, [[EPC.FAN_POWER, VAL.OFF]]);
+        }
         const speed = Math.max(1, Math.min(10, Math.round(val / 10)));
-        return this._set('fanSpeed', speed, [
-          [EPC.FAN_POWER, this.state.fanOn ? VAL.ON : VAL.OFF],
-          [EPC.FAN_VOLUME, SPEED_MIN_EPC + speed - 1],
-        ]);
+        const oldSpeed = this.state.fanSpeed;
+        const wasOn = this.state.fanOn;
+        this.state.fanSpeed = speed;
+        this.state.fanOn = true;
+        try {
+          await this.controller.set(this.ip, [
+            [EPC.FAN_POWER, VAL.ON],
+            [EPC.FAN_VOLUME, SPEED_MIN_EPC + speed - 1],
+          ]);
+          this.fanSvc.updateCharacteristic(Characteristic.Active, 1);
+        } catch (e) {
+          this.state.fanSpeed = oldSpeed;
+          this.state.fanOn = wasOn;
+          this.log.error(`[${this.name}] set fanSpeed failed: ${e.message}`);
+        }
       });
 
     this.fanSvc.getCharacteristic(Characteristic.SwingMode)
@@ -205,18 +218,6 @@ class KDKFanAccessory {
         }
       });
 
-    // --- Oscillation (Switch) ---
-    const oscName = `${this.name} Oscillation`;
-    this.oscSvc = this.accessory.getServiceById(Service.Switch, 'oscillation')
-      || this.accessory.addService(Service.Switch, oscName, 'oscillation');
-    this.oscSvc.setCharacteristic(Characteristic.Name, oscName);
-
-    this.oscSvc.getCharacteristic(Characteristic.On)
-      .onGet(() => this.state.fanOscillation)
-      .onSet(val => this._set('fanOscillation', !!val, [
-        [EPC.FAN_POWER, this.state.fanOn ? VAL.ON : VAL.OFF],
-        [EPC.FAN_FLUCTUATION, val ? VAL.ON : VAL.OFF],
-      ]));
   }
 
   _colourToMireds(colour) {
@@ -272,7 +273,6 @@ class KDKFanAccessory {
     if (resp[EPC.FAN_FLUCTUATION] != null) {
       this.state.fanOscillation = resp[EPC.FAN_FLUCTUATION] === VAL.ON;
       update(this.fanSvc, Characteristic.SwingMode, this.state.fanOscillation ? 1 : 0);
-      update(this.oscSvc, Characteristic.On, this.state.fanOscillation);
     }
     if (resp[EPC.LIGHT_POWER] != null) {
       this.state.lightOn = resp[EPC.LIGHT_POWER] === VAL.ON;
