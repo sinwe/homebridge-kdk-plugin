@@ -1,0 +1,88 @@
+{
+  "pluginAlias": "KDKCeilingFan",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "Control KDK/Panasonic ceiling fans via HomeKit. Fans are auto-discovered on your local network — just add a name.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Platform Name",
+        "type": "string",
+        "default": "KDK Ceiling Fan"
+      },
+      "broadcastAddress": {
+        "title": "Broadcast Address",
+        "type": "string",
+        "placeholder": "e.g. 192.168.1.255",
+        "description": "Subnet broadcast address for fan discovery. Leave empty to auto-detect."
+      },
+      "localIp": {
+        "title": "Local IP Address",
+        "type": "string",
+        "placeholder": "e.g. 192.168.1.99",
+        "description": "IP of this Homebridge machine. Leave empty to auto-detect."
+      },
+      "fans": {
+        "title": "Fans",
+        "type": "array",
+        "items": {
+          "title": "Fan",
+          "type": "object",
+          "properties": {
+            "name": {
+              "title": "Display Name",
+              "type": "string",
+              "required": true,
+              "placeholder": "e.g. Living Room Fan"
+            },
+            "ip": {
+              "title": "IP Address",
+              "type": "string",
+              "placeholder": "e.g. 192.168.1.152",
+              "description": "Static IP of the fan. Leave empty to auto-discover by GUID."
+            },
+            "guid": {
+              "title": "GUID (for auto-discovery)",
+              "type": "string",
+              "description": "HASHGUID from SSDP discovery. Used to match a fan when IP is not set."
+            },
+            "model": {
+              "title": "Model",
+              "type": "string",
+              "placeholder": "e.g. E48GP-MW"
+            },
+            "pollInterval": {
+              "title": "Poll Interval (seconds)",
+              "type": "integer",
+              "default": 30,
+              "minimum": 10,
+              "description": "How often to refresh the fan state from the device."
+            }
+          }
+        }
+      }
+    }
+  },
+  "layout": [
+    "name",
+    "broadcastAddress",
+    "localIp",
+    {
+      "key": "fans",
+      "type": "array",
+      "title": "Fans",
+      "description": "Add one entry per fan.",
+      "buttonText": "Add Fan",
+      "expandable": true,
+      "expanded": true,
+      "items": [
+        "fans[].name",
+        "fans[].ip",
+        "fans[].guid",
+        "fans[].model",
+        "fans[].pollInterval"
+      ]
+    }
+  ]
+}
