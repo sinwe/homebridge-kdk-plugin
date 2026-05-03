@@ -1,5 +1,8 @@
 # homebridge-kdk-plugin
 
+[![Test](https://github.com/sinwe/homebridge-kdk-plugin/actions/workflows/test.yml/badge.svg)](https://github.com/sinwe/homebridge-kdk-plugin/actions/workflows/test.yml)
+[![npm](https://img.shields.io/npm/v/homebridge-kdk-plugin)](https://www.npmjs.com/package/homebridge-kdk-plugin)
+
 Homebridge platform plugin for **KDK / Panasonic ceiling fans** with WiFi (e.g. E48GP-MW).
 
 Communicates with the fan locally over **ECHONET Lite (UDP port 3610)** — no cloud dependency.
