@@ -39,6 +39,10 @@ class KDKFanAccessory {
   _setupServices() {
     const { Service, Characteristic } = this.api.hap;
 
+    // Remove stale services from previous plugin versions
+    const staleOsc = this.accessory.getServiceById(Service.Switch, 'oscillation');
+    if (staleOsc) this.accessory.removeService(staleOsc);
+
     // --- Accessory Information ---
     this.accessory.getService(Service.AccessoryInformation)
       .setCharacteristic(Characteristic.Manufacturer, 'KDK / Panasonic')
