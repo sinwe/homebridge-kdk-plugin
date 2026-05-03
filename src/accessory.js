@@ -184,10 +184,14 @@ class KDKFanAccessory {
     this.nightSvc.getCharacteristic(Characteristic.On)
       .onGet(() => this.state.nightMode)
       .onSet(async (val) => {
-        const mode = val ? VAL.NIGHT : VAL.NORMAL;
-        const epcs = [
-          [EPC.LIGHT_POWER, val ? VAL.ON : (this.state.lightOn ? VAL.ON : VAL.OFF)],
-          [EPC.LIGHT_MODE, mode],
+        const epcs = val ? [
+          [EPC.LIGHT_POWER, VAL.ON],
+          [EPC.LIGHT_MODE, VAL.NIGHT],
+          [EPC.LIGHT_NIGHT_BRIGHTNESS, this.state.nightBrightness],
+        ] : [
+          [EPC.LIGHT_POWER, this.state.lightOn ? VAL.ON : VAL.OFF],
+          [EPC.LIGHT_MODE, VAL.NORMAL],
+          [EPC.LIGHT_BRIGHTNESS, this.state.brightness],
         ];
         try {
           await this.controller.set(this.ip, epcs);
