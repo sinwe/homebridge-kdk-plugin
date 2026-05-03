@@ -15,14 +15,14 @@
     "echonet-lite",
     "homekit"
   ],
-  "author": "",
+  "author": "sinwe",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/winarto-zhao/homebridge-kdk-plugin.git"
+    "url": "https://github.com/sinwe/homebridge-kdk-plugin.git"
   },
   "bugs": {
-    "url": "https://github.com/winarto-zhao/homebridge-kdk-plugin/issues"
+    "url": "https://github.com/sinwe/homebridge-kdk-plugin/issues"
   },
-  "homepage": "https://github.com/winarto-zhao/homebridge-kdk-plugin#readme"
+  "homepage": "https://github.com/sinwe/homebridge-kdk-plugin#readme"
 }
