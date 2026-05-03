@@ -144,6 +144,7 @@ class KDKFanAccessory {
               [EPC.LIGHT_NIGHT_BRIGHTNESS, level],
             ]);
             this.lightSvc.updateCharacteristic(Characteristic.On, true);
+            this.lightPowerSvc.updateCharacteristic(Characteristic.On, true);
           } catch (e) {
             this.state.nightBrightness = oldLevel;
             this.state.lightOn = wasOn;
@@ -162,6 +163,7 @@ class KDKFanAccessory {
             [EPC.LIGHT_BRIGHTNESS, val],
           ]);
           this.lightSvc.updateCharacteristic(Characteristic.On, true);
+          this.lightPowerSvc.updateCharacteristic(Characteristic.On, true);
         } catch (e) {
           this.state.brightness = oldBrightness;
           this.state.lightOn = wasOn;
@@ -185,11 +187,35 @@ class KDKFanAccessory {
             [EPC.LIGHT_COLOUR, colour],
           ]);
           this.lightSvc.updateCharacteristic(Characteristic.On, true);
+          this.lightPowerSvc.updateCharacteristic(Characteristic.On, true);
         } catch (e) {
           this.state.colour = oldColour;
           this.state.lightOn = wasOn;
           this.log.error(`[${this.name}] set colour failed: ${e.message}`);
         }
+      });
+
+    // --- Light On/Off (Switch) ---
+    const lightSwitchName = `${this.name} Light`;
+    this.lightPowerSvc = this.accessory.getServiceById(Service.Switch, 'light-power')
+      || this.accessory.addService(Service.Switch, lightSwitchName, 'light-power');
+    this.lightPowerSvc.setCharacteristic(Characteristic.Name, lightSwitchName);
+
+    this.lightPowerSvc.getCharacteristic(Characteristic.On)
+      .onGet(() => this.state.lightOn)
+      .onSet(val => {
+        const on = !!val;
+        const epcs = [[EPC.LIGHT_POWER, on ? VAL.ON : VAL.OFF]];
+        if (on) {
+          if (this.state.nightMode) {
+            epcs.push([EPC.LIGHT_MODE, VAL.NIGHT]);
+            epcs.push([EPC.LIGHT_NIGHT_BRIGHTNESS, this.state.nightBrightness]);
+          } else {
+            epcs.push([EPC.LIGHT_MODE, VAL.NORMAL]);
+            epcs.push([EPC.LIGHT_BRIGHTNESS, this.state.brightness]);
+          }
+        }
+        return this._set('lightOn', on, epcs);
       });
 
     // --- Night Mode (Switch) ---
@@ -216,6 +242,7 @@ class KDKFanAccessory {
           if (val) {
             this.state.lightOn = true;
             this.lightSvc.updateCharacteristic(Characteristic.On, true);
+            this.lightPowerSvc.updateCharacteristic(Characteristic.On, true);
           }
         } catch (e) {
           this.log.error(`[${this.name}] setNightMode error: ${e.message}`);
@@ -281,6 +308,7 @@ class KDKFanAccessory {
     if (resp[EPC.LIGHT_POWER] != null) {
       this.state.lightOn = resp[EPC.LIGHT_POWER] === VAL.ON;
       update(this.lightSvc, Characteristic.On, this.state.lightOn);
+      update(this.lightPowerSvc, Characteristic.On, this.state.lightOn);
     }
     if (resp[EPC.LIGHT_MODE] != null) {
       this.state.nightMode = resp[EPC.LIGHT_MODE] === VAL.NIGHT;
