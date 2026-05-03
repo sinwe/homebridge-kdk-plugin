@@ -51,26 +51,38 @@ class KDKFanAccessory {
 
     this.fanSvc.getCharacteristic(Characteristic.Active)
       .onGet(() => this.state.fanOn ? 1 : 0)
-      .onSet(val => this._set('fanOn', val === 1,
-        [[EPC.FAN_POWER, val === 1 ? VAL.ON : VAL.OFF]]));
+      .onSet(val => {
+        const on = val === 1;
+        const epcs = [[EPC.FAN_POWER, on ? VAL.ON : VAL.OFF]];
+        if (on) epcs.push([EPC.FAN_VOLUME, SPEED_MIN_EPC + this.state.fanSpeed - 1]);
+        return this._set('fanOn', on, epcs);
+      });
 
+    // minValue: 10 (not 0) so HomeKit shows a separate on/off toggle for the fan tile
     this.fanSvc.getCharacteristic(Characteristic.RotationSpeed)
-      .setProps({ minValue: 0, maxValue: 100, minStep: 10 })
+      .setProps({ minValue: 10, maxValue: 100, minStep: 10 })
       .onGet(() => this.state.fanSpeed * 10)
       .onSet(val => {
         const speed = Math.max(1, Math.min(10, Math.round(val / 10)));
-        return this._set('fanSpeed', speed, [[EPC.FAN_VOLUME, SPEED_MIN_EPC + speed - 1]]);
+        return this._set('fanSpeed', speed, [
+          [EPC.FAN_POWER, this.state.fanOn ? VAL.ON : VAL.OFF],
+          [EPC.FAN_VOLUME, SPEED_MIN_EPC + speed - 1],
+        ]);
       });
 
     this.fanSvc.getCharacteristic(Characteristic.SwingMode)
       .onGet(() => this.state.fanOscillation ? 1 : 0)
-      .onSet(val => this._set('fanOscillation', val === 1,
-        [[EPC.FAN_FLUCTUATION, val === 1 ? VAL.ON : VAL.OFF]]));
+      .onSet(val => this._set('fanOscillation', val === 1, [
+        [EPC.FAN_POWER, this.state.fanOn ? VAL.ON : VAL.OFF],
+        [EPC.FAN_FLUCTUATION, val === 1 ? VAL.ON : VAL.OFF],
+      ]));
 
     this.fanSvc.getCharacteristic(Characteristic.RotationDirection)
       .onGet(() => this.state.fanDirection)
-      .onSet(val => this._set('fanDirection', val,
-        [[EPC.FAN_DIRECTION, val === 0 ? VAL.DIR_DOWN : VAL.DIR_UP]]));
+      .onSet(val => this._set('fanDirection', val, [
+        [EPC.FAN_POWER, this.state.fanOn ? VAL.ON : VAL.OFF],
+        [EPC.FAN_DIRECTION, val === 0 ? VAL.DIR_DOWN : VAL.DIR_UP],
+      ]));
 
     // --- Light (Lightbulb) ---
     this.lightSvc = this.accessory.getService(Service.Lightbulb)
@@ -78,8 +90,20 @@ class KDKFanAccessory {
 
     this.lightSvc.getCharacteristic(Characteristic.On)
       .onGet(() => this.state.lightOn)
-      .onSet(val => this._set('lightOn', !!val,
-        [[EPC.LIGHT_POWER, val ? VAL.ON : VAL.OFF]]));
+      .onSet(val => {
+        const on = !!val;
+        const epcs = [[EPC.LIGHT_POWER, on ? VAL.ON : VAL.OFF]];
+        if (on) {
+          if (this.state.nightMode) {
+            epcs.push([EPC.LIGHT_MODE, VAL.NIGHT]);
+            epcs.push([EPC.LIGHT_NIGHT_BRIGHTNESS, this.state.nightBrightness]);
+          } else {
+            epcs.push([EPC.LIGHT_MODE, VAL.NORMAL]);
+            epcs.push([EPC.LIGHT_BRIGHTNESS, this.state.brightness]);
+          }
+        }
+        return this._set('lightOn', on, epcs);
+      });
 
     this.lightSvc.getCharacteristic(Characteristic.Brightness)
       .setProps({ minValue: 1, maxValue: 100 })
@@ -89,20 +113,66 @@ class KDKFanAccessory {
         }
         return this.state.brightness;
       })
-      .onSet(val => {
+      .onSet(async val => {
         if (this.state.nightMode) {
           const level = val <= 33 ? 1 : val <= 66 ? 2 : 3;
-          return this._set('nightBrightness', level, [[EPC.LIGHT_NIGHT_BRIGHTNESS, level]]);
+          const oldLevel = this.state.nightBrightness;
+          const wasOn = this.state.lightOn;
+          this.state.nightBrightness = level;
+          this.state.lightOn = true;
+          try {
+            await this.controller.set(this.ip, [
+              [EPC.LIGHT_POWER, VAL.ON],
+              [EPC.LIGHT_MODE, VAL.NIGHT],
+              [EPC.LIGHT_NIGHT_BRIGHTNESS, level],
+            ]);
+            this.lightSvc.updateCharacteristic(Characteristic.On, true);
+          } catch (e) {
+            this.state.nightBrightness = oldLevel;
+            this.state.lightOn = wasOn;
+            this.log.error(`[${this.name}] set nightBrightness failed: ${e.message}`);
+          }
+          return;
         }
-        return this._set('brightness', val, [[EPC.LIGHT_BRIGHTNESS, val]]);
+        const oldBrightness = this.state.brightness;
+        const wasOn = this.state.lightOn;
+        this.state.brightness = val;
+        this.state.lightOn = true;
+        try {
+          await this.controller.set(this.ip, [
+            [EPC.LIGHT_POWER, VAL.ON],
+            [EPC.LIGHT_MODE, VAL.NORMAL],
+            [EPC.LIGHT_BRIGHTNESS, val],
+          ]);
+          this.lightSvc.updateCharacteristic(Characteristic.On, true);
+        } catch (e) {
+          this.state.brightness = oldBrightness;
+          this.state.lightOn = wasOn;
+          this.log.error(`[${this.name}] set brightness failed: ${e.message}`);
+        }
       });
 
     this.lightSvc.getCharacteristic(Characteristic.ColorTemperature)
       .setProps({ minValue: MIREDS_COOL, maxValue: MIREDS_WARM })
       .onGet(() => this._colourToMireds(this.state.colour))
-      .onSet(val => {
+      .onSet(async val => {
         const colour = this._miredsToColour(val);
-        return this._set('colour', colour, [[EPC.LIGHT_COLOUR, colour]]);
+        const oldColour = this.state.colour;
+        const wasOn = this.state.lightOn;
+        this.state.colour = colour;
+        this.state.lightOn = true;
+        try {
+          await this.controller.set(this.ip, [
+            [EPC.LIGHT_POWER, VAL.ON],
+            [EPC.LIGHT_MODE, VAL.NORMAL],
+            [EPC.LIGHT_COLOUR, colour],
+          ]);
+          this.lightSvc.updateCharacteristic(Characteristic.On, true);
+        } catch (e) {
+          this.state.colour = oldColour;
+          this.state.lightOn = wasOn;
+          this.log.error(`[${this.name}] set colour failed: ${e.message}`);
+        }
       });
 
     // --- Night Mode (Switch) ---
@@ -115,8 +185,10 @@ class KDKFanAccessory {
       .onGet(() => this.state.nightMode)
       .onSet(async (val) => {
         const mode = val ? VAL.NIGHT : VAL.NORMAL;
-        const epcs = [[EPC.LIGHT_MODE, mode]];
-        if (val) epcs.push([EPC.LIGHT_POWER, VAL.ON]); // auto-on when night mode starts
+        const epcs = [
+          [EPC.LIGHT_POWER, val ? VAL.ON : (this.state.lightOn ? VAL.ON : VAL.OFF)],
+          [EPC.LIGHT_MODE, mode],
+        ];
         try {
           await this.controller.set(this.ip, epcs);
           this.state.nightMode = !!val;
@@ -128,6 +200,19 @@ class KDKFanAccessory {
           this.log.error(`[${this.name}] setNightMode error: ${e.message}`);
         }
       });
+
+    // --- Oscillation (Switch) ---
+    const oscName = `${this.name} Oscillation`;
+    this.oscSvc = this.accessory.getServiceById(Service.Switch, 'oscillation')
+      || this.accessory.addService(Service.Switch, oscName, 'oscillation');
+    this.oscSvc.setCharacteristic(Characteristic.Name, oscName);
+
+    this.oscSvc.getCharacteristic(Characteristic.On)
+      .onGet(() => this.state.fanOscillation)
+      .onSet(val => this._set('fanOscillation', !!val, [
+        [EPC.FAN_POWER, this.state.fanOn ? VAL.ON : VAL.OFF],
+        [EPC.FAN_FLUCTUATION, val ? VAL.ON : VAL.OFF],
+      ]));
   }
 
   _colourToMireds(colour) {
@@ -140,10 +225,12 @@ class KDKFanAccessory {
   }
 
   async _set(stateKey, newValue, epcPairs) {
+    const old = this.state[stateKey];
+    this.state[stateKey] = newValue;
     try {
       await this.controller.set(this.ip, epcPairs);
-      this.state[stateKey] = newValue;
     } catch (e) {
+      this.state[stateKey] = old;
       this.log.error(`[${this.name}] set ${stateKey} failed: ${e.message}`);
     }
   }
@@ -181,6 +268,7 @@ class KDKFanAccessory {
     if (resp[EPC.FAN_FLUCTUATION] != null) {
       this.state.fanOscillation = resp[EPC.FAN_FLUCTUATION] === VAL.ON;
       update(this.fanSvc, Characteristic.SwingMode, this.state.fanOscillation ? 1 : 0);
+      update(this.oscSvc, Characteristic.On, this.state.fanOscillation);
     }
     if (resp[EPC.LIGHT_POWER] != null) {
       this.state.lightOn = resp[EPC.LIGHT_POWER] === VAL.ON;

@@ -106,9 +106,10 @@ class EchonetController extends EventEmitter {
 
   _buildFrame(esv, epcs) {
     const tid = this._nextTid();
+    const tidByte = tid & 0xFF; // KDK app uses same byte twice for TID
     const header = Buffer.from([
       0x10, 0x81,
-      (tid >> 8) & 0xFF, tid & 0xFF,
+      tidByte, tidByte,
       ...SEOJ,
       ...DEOJ,
       esv,
