@@ -6,13 +6,30 @@ Communicates with the fan locally over **ECHONET Lite (UDP port 3610)** — no c
 
 ## Features
 
-Each fan appears in Apple Home as three accessories:
+Each fan exposes four tiles in Apple Home:
 
-| Accessory | HomeKit service | Controls |
-|-----------|-----------------|----------|
-| Ceiling Fan | Fan (v2) | Power, speed (10 levels), oscillation, direction |
-| Ceiling Fan Light | Lightbulb | Power, brightness (1–100%), colour temperature |
-| Ceiling Fan Night Mode | Switch | Toggles nightlight mode; Brightness slider then controls 3 nightlight levels |
+| Tile | HomeKit service | Controls |
+|------|-----------------|----------|
+| Ceiling Fan | Fan (v2) | Speed slider (0–100% in 10 steps; 0% = off), rotation direction |
+| Ceiling Fan Light | Lightbulb | Brightness (1–100%), colour temperature (warm–cool) |
+| [Name] Light | Switch | Dedicated light on/off toggle |
+| [Name] Night Mode | Switch | Night mode on/off; brightness slider then controls 3 nightlight levels |
+
+**Fan controls**
+- On/off via speed slider (drag to 0% = off, drag above 0% = on)
+- 10 speed levels
+- Clockwise / counter-clockwise rotation direction
+
+**Light controls**
+- On/off via the Light switch tile or by tapping the lightbulb tile
+- Brightness 1–100%
+- Colour temperature (warm 2000 K → cool 6500 K)
+- Night mode: dims to one of three low-light levels
+
+**General**
+- Fully local — no internet or cloud account required
+- Auto-discovery via SSDP broadcast
+- Periodic status polling to keep HomeKit in sync with physical remote changes
 
 ## Requirements
 
