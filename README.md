@@ -2,6 +2,7 @@
 
 [![Test](https://github.com/sinwe/homebridge-kdk-plugin/actions/workflows/test.yml/badge.svg)](https://github.com/sinwe/homebridge-kdk-plugin/actions/workflows/test.yml)
 [![npm](https://img.shields.io/npm/v/homebridge-kdk-plugin)](https://www.npmjs.com/package/homebridge-kdk-plugin)
+[![npm downloads](https://img.shields.io/npm/dm/homebridge-kdk-plugin)](https://www.npmjs.com/package/homebridge-kdk-plugin)
 
 Homebridge platform plugin for **KDK / Panasonic ceiling fans** with WiFi (e.g. E48GP-MW).
 
