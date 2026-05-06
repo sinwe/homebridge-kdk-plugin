@@ -134,6 +134,8 @@ ECHONET Lite device class: `0x013A` (Panasonic ceiling fan)
 ## Tested with
 
 - KDK E48GP-MW
+- Homebridge 1.11.4
+- Homebridge 2.x
 
 ## License
 
