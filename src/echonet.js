@@ -28,6 +28,7 @@ const EPC = {
   BUZZER: 0xFC,               // ON=0x30 (prefix for SET)
   CTL_OPT: 0xFD,              // type=0x03 WiFi (prefix for SET)
   MELODY: 0xFE,               // level=0x40 (prefix for SET)
+  VERSION_INFO: 0x82,           // 4 bytes: [group, class, appendix_release, type]
   ERROR_CODE: 0x86,
   ERROR_STATUS: 0x88,
   PRODUCT_CODE: 0x8C,
@@ -151,7 +152,13 @@ class EchonetController extends EventEmitter {
     for (let i = 0; i < opc && off + 1 < msg.length; i++) {
       const epc = msg[off];
       const pdc = msg[off + 1];
-      result[epc] = (pdc > 0 && off + 2 < msg.length) ? msg[off + 2] : null;
+      if (pdc === 0) {
+        result[epc] = null;
+      } else if (pdc === 1) {
+        result[epc] = off + 2 < msg.length ? msg[off + 2] : null;
+      } else {
+        result[epc] = off + 2 + pdc <= msg.length ? msg.slice(off + 2, off + 2 + pdc) : null;
+      }
       off += 2 + pdc;
     }
     return result;

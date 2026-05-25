@@ -32,6 +32,7 @@ class KDKFanAccessory {
 
     this.accessory = platformAccessory;
     this._setupServices();
+    this._fetchFirmware();
     this._pollStatus();
     this._pollTimer = setInterval(() => this._pollStatus(), this.pollMs);
   }
@@ -249,6 +250,29 @@ class KDKFanAccessory {
         }
       });
 
+  }
+
+  async _fetchFirmware() {
+    try {
+      const resp = await this.controller.get(this.ip, [EPC.VERSION_INFO, EPC.PRODUCT_CODE]);
+      const { Service, Characteristic } = this.api.hap;
+      let firmware = null;
+
+      // EPC 0x82: 4-byte version info — byte 2 is the ECHONET Lite Appendix release (ASCII 'A'–'Z')
+      const ver = resp[EPC.VERSION_INFO];
+      if (Buffer.isBuffer(ver) && ver.length >= 3) {
+        const ch = ver[2];
+        if (ch >= 0x41 && ch <= 0x5A) firmware = String.fromCharCode(ch);
+      }
+
+      if (firmware) {
+        this.accessory.getService(Service.AccessoryInformation)
+          .setCharacteristic(Characteristic.FirmwareRevision, firmware);
+        this.log.debug(`[${this.name}] firmware: ${firmware}`);
+      }
+    } catch (e) {
+      this.log.debug(`[${this.name}] firmware fetch failed: ${e.message}`);
+    }
   }
 
   _colourToMireds(colour) {

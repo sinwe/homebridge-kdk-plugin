@@ -130,6 +130,13 @@ describe('EchonetController', () => {
       const msg = buildMsg(0x71, [[0x80, 0x00]]);
       expect(ctrl._parseResponse(msg)).toEqual({ [EPC.FAN_POWER]: null });
     });
+
+    it('returns Buffer for multi-byte EPC (e.g. VERSION_INFO)', () => {
+      const msg = buildMsg(0x72, [[EPC.VERSION_INFO, 0x04, 0x00, 0x00, 0x4C, 0x00]]);
+      const result = ctrl._parseResponse(msg);
+      expect(Buffer.isBuffer(result[EPC.VERSION_INFO])).toBe(true);
+      expect(result[EPC.VERSION_INFO][2]).toBe(0x4C); // 'L'
+    });
   });
 
   // ---------------------------------------------------------- EPC/VAL constants
