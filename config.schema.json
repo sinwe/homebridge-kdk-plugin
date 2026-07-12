@@ -33,7 +33,6 @@
             "name": {
               "title": "Display Name",
               "type": "string",
-              "required": true,
               "placeholder": "e.g. Living Room Fan"
             },
             "ip": {
@@ -59,7 +58,8 @@
               "minimum": 10,
               "description": "How often to refresh the fan state from the device."
             }
-          }
+          },
+          "required": ["name"]
         }
       }
     }
