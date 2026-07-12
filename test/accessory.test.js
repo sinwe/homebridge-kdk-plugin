@@ -61,6 +61,7 @@ function buildMocks() {
       return makeSvc();
     }),
     removeService: jest.fn(),
+    context: {},
   };
 
   const controller = {

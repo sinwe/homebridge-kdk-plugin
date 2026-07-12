@@ -192,6 +192,10 @@ class EchonetController extends EventEmitter {
       const seen = new Set();
       const sock = dgram.createSocket({ type: 'udp4', reusePort: true });
 
+      sock.on('error', (err) => {
+        this.log.error(`[ECHONET] discovery socket error: ${err.message}`);
+      });
+
       sock.on('message', (msg) => {
         const text = msg.toString('utf8');
         const d = {};
