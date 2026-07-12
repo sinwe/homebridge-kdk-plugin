@@ -48,7 +48,10 @@ class KDKFanAccessory {
     this.accessory.getService(Service.AccessoryInformation)
       .setCharacteristic(Characteristic.Manufacturer, 'KDK / Panasonic')
       .setCharacteristic(Characteristic.Model, this.model)
-      .setCharacteristic(Characteristic.SerialNumber, this.ip);
+      .setCharacteristic(Characteristic.SerialNumber, this.ip)
+      .setCharacteristic(Characteristic.FirmwareRevision, this.accessory.context.firmwareRevision || '0.0')
+      .getCharacteristic(Characteristic.FirmwareRevision)
+      .onGet(() => this.accessory.context.firmwareRevision || '0.0');
 
     // --- Fan (Fanv2) ---
     this.fanSvc = this.accessory.getService(Service.Fanv2)
@@ -266,12 +269,16 @@ class KDKFanAccessory {
       }
 
       if (firmware) {
+        this.accessory.context.firmwareRevision = firmware;
         this.accessory.getService(Service.AccessoryInformation)
-          .setCharacteristic(Characteristic.FirmwareRevision, firmware);
-        this.log.debug(`[${this.name}] firmware: ${firmware}`);
+          .getCharacteristic(Characteristic.FirmwareRevision)
+          .updateValue(firmware);
+        this.log.info(`[${this.name}] firmware: ${firmware}`);
+      } else {
+        this.log.info(`[${this.name}] firmware: no version found in response`);
       }
     } catch (e) {
-      this.log.debug(`[${this.name}] firmware fetch failed: ${e.message}`);
+      this.log.error(`[${this.name}] firmware fetch failed: ${e.message}`);
     }
   }
 
