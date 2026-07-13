@@ -17,6 +17,10 @@
   ],
   "author": "sinwe",
   "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/sinwe"
+  },
   "scripts": {
     "test": "jest"
   },
