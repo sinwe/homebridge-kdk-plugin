@@ -17,10 +17,16 @@
   ],
   "author": "sinwe",
   "license": "MIT",
-  "funding": {
-    "type": "github",
-    "url": "https://github.com/sponsors/sinwe"
-  },
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/sinwe"
+    },
+    {
+      "type": "paypal",
+      "url": "https://paypal.me/winarto"
+    }
+  ],
   "scripts": {
     "test": "jest"
   },
