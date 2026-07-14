@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.1.0] - 2026-07-14
+
+### Changed
+
+- `engines.homebridge` now explicitly declares `^1.6.0 || ^2.0.0`, matching Homebridge's recommended idiom for the UI's "2.x ready" indicator, instead of the looser open-ended `>=1.3.0`.
+
+## [1.0.6] - 2026-07-14
+
+### Added
+
+- `funding` field (GitHub Sponsors and PayPal) so Homebridge UI can show a Donate button.
+- `.github/FUNDING.yml` to enable GitHub's native Sponsor button on the repo.
+
 ## [1.0.5] - 2026-07-12
 
 ### Fixed
